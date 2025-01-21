@@ -1,0 +1,17 @@
+{
+  "platforms": [
+    "apple",
+    "android",
+    "web"
+  ],
+  "apple": {
+    "modules": [
+      "VisionMlModule"
+    ]
+  },
+  "android": {
+    "modules": [
+      "expo.modules.visionml.VisionMlModule"
+    ]
+  }
+}
