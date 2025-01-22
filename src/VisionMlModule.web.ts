@@ -1,14 +1,14 @@
-import { registerWebModule, NativeModule } from 'expo';
+import { registerWebModule, NativeModule } from "expo";
 
-import { VisionMlModuleEvents } from './VisionMl.types';
-
-class VisionMlModule extends NativeModule<VisionMlModuleEvents> {
-  PI = Math.PI;
-  async setValueAsync(value: string): Promise<void> {
-    this.emit('onChange', { value });
-  }
-  hello() {
-    return 'Hello world! 👋';
+class VisionMlModule extends NativeModule {
+  async recognizeText(path: string): Promise<
+    {
+      text: string;
+      confidence: number;
+      boundingBox: { x: number; y: number; width: number; height: number };
+    }[]
+  > {
+    throw new Error("Method not implemented on web.");
   }
 }
 

@@ -1,50 +1,55 @@
 package expo.modules.visionml
 
+import android.graphics.BitmapFactory
+import android.util.Base64
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-import java.net.URL
+import expo.modules.kotlin.Promise
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 class VisionMlModule : Module() {
-  // Each module class must implement the definition function. The definition consists of components
-  // that describes the module's functionality and behavior.
-  // See https://docs.expo.dev/modules/module-api for more details about available components.
-  override fun definition() = ModuleDefinition {
-    // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
-    // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('VisionMl')` in JavaScript.
-    Name("VisionMl")
+    override fun definition() = ModuleDefinition {
+        Name("VisionMl")
 
-    // Sets constant properties on the module. Can take a dictionary or a closure that returns a dictionary.
-    Constants(
-      "PI" to Math.PI
-    )
-
-    // Defines event names that the module can send to JavaScript.
-    Events("onChange")
-
-    // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      "Hello world! 👋"
-    }
-
-    // Defines a JavaScript function that always returns a Promise and whose native code
-    // is by default dispatched on the different thread than the JavaScript runtime runs on.
-    AsyncFunction("setValueAsync") { value: String ->
-      // Send an event to JavaScript.
-      sendEvent("onChange", mapOf(
-        "value" to value
-      ))
-    }
-
-    // Enables the module to be used as a native view. Definition components that are accepted as part of
-    // the view definition: Prop, Events.
-    View(VisionMlView::class) {
-      // Defines a setter for the `url` prop.
-      Prop("url") { view: VisionMlView, url: URL ->
-        view.webView.loadUrl(url.toString())
-      }
-      // Defines an event that the view can send to JavaScript.
-      Events("onLoad")
-    }
-  }
+        AsyncFunction("recognizeText") { base64String: String, promise: Promise ->
+                try {
+                    val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                    val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                    val image = InputImage.fromBitmap(bitmap, 0)
+                    
+                    val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                    recognizer.process(image)
+                        .addOnSuccessListener { visionText ->
+                            val results = visionText.textBlocks.flatMap { block ->
+                                block.lines.flatMap { line ->
+                                    line.elements.map { element ->
+                                        val boundingBox = element.boundingBox
+                                        mapOf(
+                                            "text" to element.text,
+                                            "confidence" to element.confidence,
+                                            "boundingBox" to mapOf(
+                                                "x" to (boundingBox?.left?.toFloat() ?: 0f),
+                                                "y" to (boundingBox?.top?.toFloat() ?: 0f),
+                                                "width" to (boundingBox?.width()?.toFloat() ?: 0f),
+                                                "height" to (boundingBox?.height()?.toFloat() ?: 0f)
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                            promise.resolve(results)
+                        }
+                        .addOnFailureListener { e ->
+                            promise.reject("ERR_VISION_ML_TEXT_RECOGNITION_FAILED", "Text recognition failed", e)
+                        }
+                } catch (e: Exception) {
+                    promise.reject("ERR_VISION_ML_TEXT_RECOGNITION_FAILED", "Text recognition failed", e)
+                }
+            }
+        }
 }

@@ -1,12 +1,14 @@
-import { NativeModule, requireNativeModule } from 'expo';
+import { NativeModule, requireNativeModule } from "expo";
 
-import { VisionMlModuleEvents } from './VisionMl.types';
-
-declare class VisionMlModule extends NativeModule<VisionMlModuleEvents> {
-  PI: number;
-  hello(): string;
-  setValueAsync(value: string): Promise<void>;
+declare class VisionMlModule extends NativeModule {
+  recognizeText(path: string): Promise<
+    {
+      text: string;
+      confidence: number;
+      boundingBox: { x: number; y: number; width: number; height: number };
+    }[]
+  >;
 }
 
 // This call loads the native module object from the JSI.
-export default requireNativeModule<VisionMlModule>('VisionMl');
+export default requireNativeModule<VisionMlModule>("VisionMl");

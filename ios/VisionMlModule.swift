@@ -1,48 +1,38 @@
 import ExpoModulesCore
+import Vision
+import UIKit
 
 public class VisionMlModule: Module {
-  // Each module class must implement the definition function. The definition consists of components
-  // that describes the module's functionality and behavior.
-  // See https://docs.expo.dev/modules/module-api for more details about available components.
   public func definition() -> ModuleDefinition {
     // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
     // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
     // The module will be accessible from `requireNativeModule('VisionMl')` in JavaScript.
     Name("VisionMl")
 
-    // Sets constant properties on the module. Can take a dictionary or a closure that returns a dictionary.
-    Constants([
-      "PI": Double.pi
-    ])
-
-    // Defines event names that the module can send to JavaScript.
-    Events("onChange")
-
-    // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      return "Hello world! 👋"
-    }
-
-    // Defines a JavaScript function that always returns a Promise and whose native code
-    // is by default dispatched on the different thread than the JavaScript runtime runs on.
-    AsyncFunction("setValueAsync") { (value: String) in
-      // Send an event to JavaScript.
-      self.sendEvent("onChange", [
-        "value": value
-      ])
-    }
-
-    // Enables the module to be used as a native view. Definition components that are accepted as part of the
-    // view definition: Prop, Events.
-    View(VisionMlView.self) {
-      // Defines a setter for the `url` prop.
-      Prop("url") { (view: VisionMlView, url: URL) in
-        if view.webView.url != url {
-          view.webView.load(URLRequest(url: url))
-        }
+    // Defines a JavaScript function for text recognition
+      AsyncFunction("recognizeText") { (base64String: String) -> [[String: Any]] in
+      guard let imageData = Data(base64Encoded: base64String),
+            let image = UIImage(data: imageData),
+            let cgImage = image.cgImage else {
+        throw NSError(domain: "VisionMl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid image data"])
       }
-
-      Events("onLoad")
+      
+      let request = VNRecognizeTextRequest()
+          let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+      
+      try handler.perform([request])
+      
+      guard let observations = request.results else {
+        return []
+      }
+      
+      return observations.compactMap { observation in
+          [
+            "text": observation.topCandidates(1).first?.string ?? "",
+           "confidence": observation.confidence,
+            "boundingBox": ["x":observation.boundingBox.origin.x,"y":observation.boundingBox.origin.y,"width":observation.boundingBox.size.width,"height":observation.boundingBox.size.height]
+          ]
+      }
     }
   }
 }
