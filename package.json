@@ -1,6 +1,6 @@
 {
   "name": "react-native-vision-ml",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "easy access to vision framework",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -21,13 +21,13 @@
     "vision-ml",
     "VisionMl"
   ],
-  "repository": "https://github.com/philipheinser/visionml",
+  "repository": "https://github.com/philipheinser/react-native-vision-ml",
   "bugs": {
-    "url": "https://github.com/philipheinser/visionml/issues"
+    "url": "https://github.com/philipheinser/react-native-vision-ml/issues"
   },
   "author": "Philip Heinser <philipheinser@me.com> (philipheinser)",
   "license": "MIT",
-  "homepage": "https://github.com/philipheinser/visionml#readme",
+  "homepage": "https://github.com/philipheinser/react-native-vision-ml#readme",
   "dependencies": {},
   "devDependencies": {
     "@types/react": "~18.3.12",
